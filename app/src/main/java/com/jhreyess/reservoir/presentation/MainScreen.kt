@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -64,7 +65,6 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -301,7 +301,7 @@ fun AdditionalInformation(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(max = 168.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Column(
             modifier = Modifier.weight(1f),
@@ -401,8 +401,8 @@ fun AdditionalInformation(
         Column(modifier = Modifier.weight(1f)) {
             DataCard(
                 title = "Niveles de agua Máximas Ordinarias (NAMO)",
-                titleSpace = 20.dp,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                maxLines = 2
             ) {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -424,7 +424,7 @@ fun AdditionalInformation(
 fun DataCard(
     title: String,
     modifier: Modifier = Modifier,
-    titleSpace: Dp = 10.dp,
+    maxLines: Int = 1,
     content: @Composable () -> Unit = {}
 ) {
     Box(
@@ -433,15 +433,19 @@ fun DataCard(
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
             .padding(8.dp)
     ) {
-        Column {
+        Column(
+            modifier = Modifier.fillMaxHeight(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
             Text(
                 text = title,
-                fontSize = 9.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.ExtraBold,
+                maxLines = maxLines,
+                overflow = TextOverflow.Visible,
                 lineHeight = 12.sp,
-                modifier = Modifier.fillMaxWidth(0.85f)
+                modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(titleSpace))
             content()
         }
     }
@@ -456,7 +460,7 @@ fun AppPreview() {
     ReservoirTheme {
         val presas = listOf(
             DamEntity("LB","La boca", "",39.5f,15.13f, 0.3832f,""),
-            DamEntity("C","Cuchillo", "",1123.14f,405.25f, 0.3608f,""),
+            DamEntity("C","El Cuchillo", "",1123.14f,1025.25f, 0.3608f,""),
             DamEntity("CP","Cerro Prieto", "",300f,21.7f, 0.0723f,""),
         )
         val state = HomeState(
@@ -464,7 +468,7 @@ fun AppPreview() {
             diff = 0.1523f,
             currentStorage = 442.08f,
             totalStorage = 1462.6f,
-            records = List(10) { i -> RecordEntity(0.4f, Date(getCurrentDate(-i).asTimestamp())) },
+            records = List(10) { i -> RecordEntity(500f, Date(getCurrentDate(-i).asTimestamp())) },
             lastUpdate = 0L,
             isLoading = false,
         )

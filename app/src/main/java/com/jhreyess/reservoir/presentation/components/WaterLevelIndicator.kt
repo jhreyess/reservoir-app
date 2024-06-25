@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -44,9 +45,11 @@ fun WaterLevelIndicator(
         ) {
             label?.let {
                 Text(
-                    modifier = Modifier.alignByBaseline(),
+                    modifier = Modifier.alignByBaseline().fillMaxWidth(0.4f),
                     fontWeight = FontWeight.ExtraBold,
                     fontSize = 7.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     text = it.uppercase()
                 )
             }
