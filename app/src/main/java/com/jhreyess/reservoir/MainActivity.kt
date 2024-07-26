@@ -17,6 +17,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.jhreyess.reservoir.ui.theme.ReservoirTheme
+import com.jhreyess.reservoir.util.minutesUntilTarget
 import com.jhreyess.reservoir.workers.CollectorWorker
 import com.jhreyess.reservoir.workers.PollDataWorker
 import java.util.concurrent.TimeUnit
@@ -26,6 +27,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        val hoursLeft = minutesUntilTarget(13, 30)
+
         val constraint = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .setRequiresBatteryNotLow(true)
@@ -33,7 +36,7 @@ class MainActivity : ComponentActivity() {
         val pollRequest = PeriodicWorkRequestBuilder<PollDataWorker>(6, TimeUnit.HOURS)
             .setConstraints(constraint)
             .addTag("dataworker")
-            .setInitialDelay(10, TimeUnit.MINUTES)
+            .setInitialDelay(hoursLeft, TimeUnit.MINUTES)
             .build()
         val collectorRequest = PeriodicWorkRequestBuilder<CollectorWorker>(5, TimeUnit.DAYS)
             .addTag("collectorworker")
