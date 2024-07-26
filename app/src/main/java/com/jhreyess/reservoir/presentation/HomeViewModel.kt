@@ -11,6 +11,8 @@ import com.jhreyess.reservoir.data.local.RecordEntity
 import com.jhreyess.reservoir.data.local.SettingsDataStore
 import com.jhreyess.reservoir.data.model.Result
 import com.jhreyess.reservoir.util.getCurrentDate
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -69,48 +71,48 @@ class HomeViewModel(
                     calendar.add(Calendar.DAY_OF_YEAR, -1)
                 }
 
-                last30Days.reversed().forEachIndexed { idx, day ->
-                    Log.d("DEBUG", day)
-                    if(idx == last30Days.size - 1) {
-                        pollData(day)
-                    } else {
-                        pollData(day, true)
+                last30Days.reversed().mapIndexed { idx, day ->
+                    async {
+                        Log.d("DEBUG", day)
+                        if(idx == last30Days.size - 1) {
+                            pollData(day)
+                        } else {
+                            pollData(day, true)
+                        }
                     }
-                }
+                }.awaitAll()
+
                 Log.d("DEBUG", "Storing first fetch in data store...")
                 dataStore.saveFirstFetchToPreference(true)
             }
         }
     }
 
-    private fun pollData(
+    private suspend fun pollData(
         from: String,
         fetchDataOnly: Boolean = false
     ) {
-        viewModelScope.launch {
+        if(fetchDataOnly) {
+            fetchData(from, false)
+            return
+        }
 
-            if(fetchDataOnly) {
-                fetchData(from, false)
-                return@launch
-            }
-
-            damRepo.getLastUpdate().collect { result ->
-                when(result) {
-                    is Result.Success -> {
-                        val remoteId = result.data.id
-                        val lastFetchedId = dataStore.lastFetchedIdPreferenceFlow.first()
-                        Log.d("DEBUG", "Remote ID at vm: $remoteId")
-                        Log.d("DEBUG", "Local ID at vm: $lastFetchedId")
-                        if(remoteId > lastFetchedId) {
-                            Log.d("DEBUG", "View Model fetching...")
-                            fetchData(result.data.date, true, remoteId)
-                        }
-                        val now = Calendar.getInstance(Locale.getDefault()).timeInMillis
-                        dataStore.saveLastUpdateToPreferences(now)
+        damRepo.getLastUpdate().collect { result ->
+            when(result) {
+                is Result.Success -> {
+                    val remoteId = result.data.id
+                    val lastFetchedId = dataStore.lastFetchedIdPreferenceFlow.first()
+                    Log.d("DEBUG", "Remote ID at vm: $remoteId")
+                    Log.d("DEBUG", "Local ID at vm: $lastFetchedId")
+                    if(remoteId > lastFetchedId) {
+                        Log.d("DEBUG", "View Model fetching...")
+                        fetchData(result.data.date, true, remoteId)
                     }
-                    is Result.Loading -> { _state.update { it.copy(isLoading = result.isLoading) } }
-                    is Result.Error -> { result.exception.message }
+                    val now = Calendar.getInstance(Locale.getDefault()).timeInMillis
+                    dataStore.saveLastUpdateToPreferences(now)
                 }
+                is Result.Loading -> { _state.update { it.copy(isLoading = result.isLoading) } }
+                is Result.Error -> { result.exception.message }
             }
         }
     }
@@ -132,7 +134,11 @@ class HomeViewModel(
 
     fun onEvent(event: ScreenEvent) {
         when(event) {
-            is ScreenEvent.Refresh -> { pollData(getCurrentDate()) }
+            is ScreenEvent.Refresh -> {
+                viewModelScope.launch {
+                    pollData(getCurrentDate())
+                }
+            }
         }
     }
 
