@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -24,6 +25,7 @@ class SettingsDataStore(
 ) {
     private val LAST_UPDATE = longPreferencesKey("last_update")
     private val LAST_ID = longPreferencesKey("last_id")
+    private val LAST_DATE = stringPreferencesKey("last_date")
     private val FIRST_FETCH = booleanPreferencesKey("first_fetch")
 
     val preferenceFlow: Flow<Long> = preferencesDataStore.data
@@ -52,6 +54,19 @@ class SettingsDataStore(
             preferences[LAST_ID] ?: 0L
         }
 
+    val lastFetchedDatePreferenceFlow: Flow<String> = preferencesDataStore.data
+        .catch {
+            if (it is IOException) {
+                it.printStackTrace()
+                emit(emptyPreferences())
+            } else {
+                throw it
+            }
+        }
+        .map { preferences ->
+            preferences[LAST_DATE] ?: ""
+        }
+
     val firstFetchPreferenceFlow: Flow<Boolean> = preferencesDataStore.data
         .catch {
             if (it is IOException) {
@@ -74,6 +89,12 @@ class SettingsDataStore(
     suspend fun saveLastFetchedIdToPreferences(id: Long) {
         preferencesDataStore.edit { preferences ->
             preferences[LAST_ID] = id
+        }
+    }
+
+    suspend fun saveLastFetchedDateToPreferences(date: String) {
+        preferencesDataStore.edit { preferences ->
+            preferences[LAST_DATE] = date
         }
     }
 

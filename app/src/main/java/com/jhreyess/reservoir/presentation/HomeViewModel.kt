@@ -101,12 +101,14 @@ class HomeViewModel(
             when(result) {
                 is Result.Success -> {
                     val remoteId = result.data.id
+                    val remoteDate = result.data.date
                     val lastFetchedId = dataStore.lastFetchedIdPreferenceFlow.first()
-                    Log.d("DEBUG", "Remote ID at vm: $remoteId")
-                    Log.d("DEBUG", "Local ID at vm: $lastFetchedId")
-                    if(remoteId > lastFetchedId) {
+                    val lastFetchedDate = dataStore.lastFetchedDatePreferenceFlow.first()
+                    Log.d("DEBUG", "Remote ID at vm: $remoteId\tLocal ID at vm: $lastFetchedId")
+                    Log.d("DEBUG", "Remote Date at vm: $remoteDate\tLocal Date at vm: $lastFetchedDate")
+                    if(remoteId > lastFetchedId || remoteDate != lastFetchedDate) {
                         Log.d("DEBUG", "View Model fetching...")
-                        fetchData(result.data.date, true, remoteId)
+                        fetchData(result.data.date, true, remoteId, remoteDate)
                     }
                     val now = Calendar.getInstance(Locale.getDefault()).timeInMillis
                     dataStore.saveLastUpdateToPreferences(now)
@@ -120,13 +122,17 @@ class HomeViewModel(
     private suspend fun fetchData(
         from: String,
         storeInDb: Boolean,
-        fetchedId: Long? = null
+        fetchedId: Long? = null,
+        fetchedDate: String? = null
     ) {
         damRepo.getInformation(from, storeInDb).collect { result ->
             if(result is Result.Success) {
                 recordRepo.insert(result.data)
                 fetchedId?.let {
                     dataStore.saveLastFetchedIdToPreferences(it)
+                }
+                fetchedDate?.let {
+                    dataStore.saveLastFetchedDateToPreferences(it)
                 }
             }
         }

@@ -41,15 +41,18 @@ class PollDataWorker(
             return@withContext try{
                 val response = WaterApi.retrofitService.getLastUpdate().first()
                 val remoteId = response.id
+                val remoteDate = response.date
                 val localId = appContainer.dataStore.lastFetchedIdPreferenceFlow.first()
+                val localDate = appContainer.dataStore.lastFetchedDatePreferenceFlow.first()
                 Log.d("DEBUG", "Worker fetching...")
                 Log.d("DEBUG", "Local ID at worker: $localId")
 
-                if(remoteId > localId) {
+                if(remoteId > localId || remoteDate != localDate) {
                     damsRepo.getInformation(response.date, true).collect { result ->
                         if(result is ModelResult.Success) {
                             recordsRepo.insert(result.data)
                             appContainer.dataStore.saveLastFetchedIdToPreferences(remoteId)
+                            appContainer.dataStore.saveLastFetchedDateToPreferences(remoteDate)
 
                             val formattedString = StringBuilder()
                             result.data.forEach {
